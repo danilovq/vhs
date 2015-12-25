@@ -1,29 +1,13 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Iterator;
 
-/***************************************************************
- *  Copyright notice
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Claus Due <claus@namelesscoder.net>
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
+
 use TYPO3\CMS\Extbase\Reflection\ObjectAccess;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 
@@ -51,17 +35,18 @@ class FilterViewHelper extends AbstractViewHelper {
 	 * @param string $propertyName Optional property name to extract and use for comparison instead of the object; use on ObjectStorage etc. Note: supports dot-path expressions.
 	 * @param boolean $preserveKeys If TRUE, keys in the array are preserved - even if they are numeric
 	 * @param boolean $invert Invert the behavior of the view helper
+	 * @param boolean $nullFilter If TRUE and $filter is NULL (not set) - to filter NULL or empty values
 	 *
 	 * @return mixed
 	 */
-	public function render($subject = NULL, $filter = NULL, $propertyName = NULL, $preserveKeys = FALSE, $invert = FALSE) {
+	public function render($subject = NULL, $filter = NULL, $propertyName = NULL, $preserveKeys = FALSE, $invert = FALSE, $nullFilter = FALSE) {
 		if (NULL === $subject) {
 			$subject = $this->renderChildren();
 		}
 		if (NULL === $subject || (FALSE === is_array($subject) && FALSE === $subject instanceof \Traversable)) {
 			return array();
 		}
-		if (TRUE === is_null($filter) || '' === $filter) {
+		if ((FALSE === (boolean) $nullFilter && NULL === $filter) || '' === $filter) {
 			return $subject;
 		}
 		if (TRUE === $subject instanceof \Traversable) {
@@ -84,7 +69,7 @@ class FilterViewHelper extends AbstractViewHelper {
 	 * simply does a weak comparison (==) for sameness.
 	 *
 	 * @param mixed $item
-	 * @param mixed $filter
+	 * @param mixed $filter Could be a single value or an Array. If so the function returns TRUE when $item matches with any value in it.
 	 * @param string $propertyName
 	 * @return boolean
 	 */
@@ -94,7 +79,7 @@ class FilterViewHelper extends AbstractViewHelper {
 		} else {
 			$value = $item;
 		}
-		return ($value == $filter);
+		return is_array($filter) ? in_array($value, $filter) : ($value == $filter);
 	}
 
 }

@@ -1,28 +1,12 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Format;
-/***************************************************************
- *  Copyright notice
+
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Claus Due <claus@namelesscoder.net>
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
 
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractViewHelper;
 
@@ -48,6 +32,7 @@ class EliminateViewHelper extends AbstractViewHelper {
 		$this->registerArgument('characters', 'mixed', "Characters to remove. Array or string, i.e. {0: 'a', 1: 'b', 2: 'c'} or 'abc' to remove all occurrences of a, b and c");
 		$this->registerArgument('strings', 'mixed', "Strings to remove. Array or CSV, i.e. {0: 'foo', 1: 'bar'} or 'foo,bar' to remove all occorrences of foo and bar. If your strings overlap then place the longest match first");
 		$this->registerArgument('whitespace', 'boolean', 'Eliminate ALL whitespace characters', FALSE, FALSE);
+		$this->registerArgument('whitespaceBetweenHtmlTags', 'boolean', 'Eliminate ALL whitespace characters between HTML tags', FALSE, FALSE);
 		$this->registerArgument('tabs', 'boolean', 'Eliminate only tab whitespaces', FALSE, FALSE);
 		$this->registerArgument('unixBreaks', 'boolean', 'Eliminate only UNIX line breaks', FALSE, FALSE);
 		$this->registerArgument('windowsBreaks', 'boolean', 'Eliminates only Windows carriage returns', FALSE, FALSE);
@@ -72,6 +57,9 @@ class EliminateViewHelper extends AbstractViewHelper {
 		}
 		if (TRUE === $this->arguments['whitespace']) {
 			$content = $this->eliminateWhitespace($content);
+		}
+		if (TRUE === $this->arguments['whitespaceBetweenHtmlTags']) {
+			$content = $this->eliminateWhitespaceBetweenHtmlTags($content);
 		}
 		if (TRUE === $this->arguments['tabs']) {
 			$content = $this->eliminateTabs($content);
@@ -144,6 +132,15 @@ class EliminateViewHelper extends AbstractViewHelper {
 	 */
 	protected function eliminateWhitespace($content) {
 		$content = preg_replace('/\s+/', '', $content);
+		return $content;
+	}
+
+	/**
+	 * @param string $content
+	 * @return string
+	 */
+	protected function eliminateWhitespaceBetweenHtmlTags($content) {
+		$content = trim(preg_replace('/>\s+</', '><', $content));
 		return $content;
 	}
 

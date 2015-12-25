@@ -1,30 +1,15 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Condition\Page;
 
-/***************************************************************
- *  Copyright notice
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Claus Due <claus@namelesscoder.net>
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
+
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractConditionViewHelper;
+use FluidTYPO3\Vhs\Traits\ConditionViewHelperTrait;
 
 /**
  * ### Condition: Is current language
@@ -41,14 +26,27 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractConditionViewHelper;
  */
 class IsLanguageViewHelper extends AbstractConditionViewHelper {
 
+	use ConditionViewHelperTrait;
+
 	/**
-	 * Render method
-	 *
-	 * @param mixed $language
-	 * @param string $defaultTitle
-	 * @return string
+	 * Initialize arguments
 	 */
-	public function render($language, $defaultTitle = 'en') {
+	public function initializeArguments() {
+		parent::initializeArguments();
+		$this->registerArgument('language', 'string', 'language to check', TRUE);
+		$this->registerArgument('defaultTitle', 'string', 'title of the default language', FALSE, 'en');
+	}
+
+	/**
+	 * This method decides if the condition is TRUE or FALSE. It can be overriden in extending viewhelpers to adjust functionality.
+	 *
+	 * @param array $arguments ViewHelper arguments to evaluate the condition for this ViewHelper, allows for flexiblity in overriding this method.
+	 * @return bool
+	 */
+	static protected function evaluateCondition($arguments = NULL) {
+		$language = $arguments['language'];
+		$defaultTitle = $arguments['defaultTitle'];
+
 		$currentLanguageUid = $GLOBALS['TSFE']->sys_language_uid;
 		if (TRUE === is_numeric($language)) {
 			$languageUid = intval($language);
@@ -64,10 +62,7 @@ class IsLanguageViewHelper extends AbstractConditionViewHelper {
 				}
 			}
 		}
-		if ($languageUid === $currentLanguageUid) {
-			return $this->renderThenChild();
-		}
-		return $this->renderElseChild();
+		return $languageUid === $currentLanguageUid;
 	}
 
 }

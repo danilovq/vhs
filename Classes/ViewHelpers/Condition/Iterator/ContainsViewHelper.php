@@ -1,39 +1,28 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Condition\Iterator;
 
-/***************************************************************
- *  Copyright notice
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Claus Due <claus@namelesscoder.net>
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
+
 use TYPO3\CMS\Extbase\DomainObject\AbstractDomainObject;
 use TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface;
 use TYPO3\CMS\Extbase\Persistence\Generic\LazyObjectStorage;
 use TYPO3\CMS\Extbase\Persistence\Generic\QueryResult;
 use TYPO3\CMS\Extbase\Persistence\ObjectStorage;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractConditionViewHelper;
+use FluidTYPO3\Vhs\Traits\ConditionViewHelperTrait;
 
 /**
  * Condition ViewHelper. Renders the then-child if Iterator/array
  * haystack contains needle value.
+ *
+ * ### Example:
+ *
+ *     {v:condition.iterator.contains(needle: 'foo', haystack: {0: 'foo'}, then: 'yes', else: 'no')}
  *
  * @author Claus Due <claus@namelesscoder.net>
  * @package Vhs
@@ -41,10 +30,7 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractConditionViewHelper;
  */
 class ContainsViewHelper extends AbstractConditionViewHelper {
 
-	/**
-	 * @var mixed
-	 */
-	protected $evaluation = FALSE;
+	use ConditionViewHelperTrait;
 
 	/**
 	 * Initialize arguments
@@ -56,40 +42,33 @@ class ContainsViewHelper extends AbstractConditionViewHelper {
 	}
 
 	/**
-	 * Render method
+	 * This method decides if the condition is TRUE or FALSE. It can be overriden in extending viewhelpers to adjust functionality.
 	 *
-	 * @return string
+	 * @param array $arguments ViewHelper arguments to evaluate the condition for this ViewHelper, allows for flexiblity in overriding this method.
+	 * @return bool
 	 */
-	public function render() {
-		$haystack = $this->arguments['haystack'];
-		$needle = $this->arguments['needle'];
-
-		$this->evaluation = $this->assertHaystackHasNeedle($haystack, $needle);
-
-		if (FALSE !== $this->evaluation) {
-			return $this->renderThenChild();
-		} else {
-			return $this->renderElseChild();
-		}
+	static protected function evaluateCondition($arguments = NULL) {
+		return FALSE !== self::assertHaystackHasNeedle($arguments['haystack'], $arguments['needle'], $arguments);;
 	}
 
 	/**
 	 * @param integer $index
+	 * @param array $arguments
 	 * @return mixed
 	 */
-	protected function getNeedleAtIndex($index) {
+	static protected function getNeedleAtIndex($index, $arguments) {
 		if (0 > $index) {
 			return NULL;
 		}
-		$haystack = $this->arguments['haystack'];
+		$haystack = $arguments['haystack'];
 		$asArray = array();
 		if (TRUE === is_array($haystack)) {
 			$asArray = $haystack;
-		} elseif (TRUE === $haystack instanceof ObjectStorage) {
-			/** @var $haystack ObjectStorage */
-			$asArray = $haystack->toArray();
 		} elseif (TRUE === $haystack instanceof LazyObjectStorage) {
 			/** @var $haystack LazyObjectStorage */
+			$asArray = $haystack->toArray();
+		} elseif (TRUE === $haystack instanceof ObjectStorage) {
+			/** @var $haystack ObjectStorage */
 			$asArray = $haystack->toArray();
 		} elseif (TRUE === $haystack instanceof QueryResult) {
 			/** @var $haystack QueryResult */
@@ -103,17 +82,18 @@ class ContainsViewHelper extends AbstractConditionViewHelper {
 	/**
 	 * @param mixed $haystack
 	 * @param mixed $needle
+	 * @param array $arguments
 	 * @return boolean|integer
 	 */
-	protected function assertHaystackHasNeedle($haystack, $needle) {
+	static protected function assertHaystackHasNeedle($haystack, $needle, $arguments) {
 		if (TRUE === is_array($haystack)) {
-			return $this->assertHaystackIsArrayAndHasNeedle($haystack, $needle);
-		} elseif ($haystack instanceof ObjectStorage) {
-			return $this->assertHaystackIsObjectStorageAndHasNeedle($haystack, $needle);
+			return self::assertHaystackIsArrayAndHasNeedle($haystack, $needle, $arguments);
 		} elseif ($haystack instanceof LazyObjectStorage) {
-			return $this->assertHaystackIsObjectStorageAndHasNeedle($haystack, $needle);
+			return self::assertHaystackIsObjectStorageAndHasNeedle($haystack, $needle);
+		} elseif ($haystack instanceof ObjectStorage) {
+			return self::assertHaystackIsObjectStorageAndHasNeedle($haystack, $needle);
 		} elseif ($haystack instanceof QueryResult) {
-			return $this->assertHaystackIsQueryResultAndHasNeedle($haystack, $needle);
+			return self::assertHaystackIsQueryResultAndHasNeedle($haystack, $needle);
 		} elseif (TRUE === is_string($haystack)) {
 			return strpos($haystack, $needle);
 		}
@@ -125,7 +105,7 @@ class ContainsViewHelper extends AbstractConditionViewHelper {
 	 * @param mixed $needle
 	 * @return boolean|integer
 	 */
-	protected function assertHaystackIsQueryResultAndHasNeedle($haystack, $needle) {
+	static protected function assertHaystackIsQueryResultAndHasNeedle($haystack, $needle) {
 		if (TRUE === $needle instanceof DomainObjectInterface) {
 			/** @var $needle DomainObjectInterface */
 			$needle = $needle->getUid();
@@ -144,7 +124,7 @@ class ContainsViewHelper extends AbstractConditionViewHelper {
 	 * @param mixed $needle
 	 * @return boolean|integer
 	 */
-	protected function assertHaystackIsObjectStorageAndHasNeedle($haystack, $needle) {
+	static protected function assertHaystackIsObjectStorageAndHasNeedle($haystack, $needle) {
 		$index = 0;
 		/** @var $candidate DomainObjectInterface */
 		if (TRUE === $needle instanceof AbstractDomainObject) {
@@ -162,11 +142,12 @@ class ContainsViewHelper extends AbstractConditionViewHelper {
 	/**
 	 * @param mixed $haystack
 	 * @param mixed $needle
+	 * @param array $arguments
 	 * @return boolean|integer
 	 */
-	protected function assertHaystackIsArrayAndHasNeedle($haystack, $needle) {
+	static protected function assertHaystackIsArrayAndHasNeedle($haystack, $needle, $arguments) {
 		if (FALSE === $needle instanceof DomainObjectInterface) {
-			if (TRUE === (boolean) $this->arguments['considerKeys']) {
+			if (TRUE === (boolean) $arguments['considerKeys']) {
 				$result = (boolean) (FALSE !== array_search($needle, $haystack) || TRUE === isset($haystack[$needle]));
 			} else {
 				$result = array_search($needle, $haystack);
@@ -189,7 +170,7 @@ class ContainsViewHelper extends AbstractConditionViewHelper {
 	 * @param mixed $needle
 	 * @return boolean|integer
 	 */
-	protected function assertHaystackIsStringAndHasNeedle($haystack, $needle) {
+	static protected function assertHaystackIsStringAndHasNeedle($haystack, $needle) {
 		return strpos($haystack, $needle);
 	}
 

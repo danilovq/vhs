@@ -1,31 +1,17 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Condition\Page;
 
-/***************************************************************
- *  Copyright notice
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Björn Fromme <fromme@dreipunktnull.com>, dreipunktnull
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- ***************************************************************/
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
+
 use FluidTYPO3\Vhs\Service\PageSelectService;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractConditionViewHelper;
+use FluidTYPO3\Vhs\Traits\ConditionViewHelperTrait;
 
 /**
  * ### Condition: Page has subpages
@@ -42,38 +28,54 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractConditionViewHelper;
  */
 class HasSubpagesViewHelper extends AbstractConditionViewHelper {
 
+	use ConditionViewHelperTrait;
+
 	/**
 	 * @var PageSelectService
 	 */
-	protected $pageSelect;
+	static protected $pageSelect;
 
 	/**
 	 * @param PageSelectService $pageSelect
 	 * @return void
 	 */
-	public function injectPageSelectService(PageSelectService $pageSelect) {
-		$this->pageSelect = $pageSelect;
+	static public function setPageSelectService(PageSelectService $pageSelect) {
+		self::$pageSelect = $pageSelect;
 	}
 
 	/**
-	 * Render method
-	 *
-	 * @param integer $pageUid
-	 * @param boolean $includeHidden
-	 * @param boolean $showHiddenInMenu
-	 * @return string
+	 * Initialize arguments
 	 */
-	public function render($pageUid = NULL, $includeHidden = FALSE, $showHiddenInMenu = FALSE) {
+	public function initializeArguments() {
+		parent::initializeArguments();
+		$this->registerArgument('pageUid', 'integer', 'value to check', FALSE, NULL);
+		$this->registerArgument('includeHidden', 'boolean', 'include hidden pages', FALSE, FALSE);
+		$this->registerArgument('showHiddenInMenu', 'boolean', 'include pages hidden in menu', FALSE, FALSE);
+	}
+
+	/**
+	 * This method decides if the condition is TRUE or FALSE. It can be overriden in extending viewhelpers to adjust functionality.
+	 *
+	 * @param array $arguments ViewHelper arguments to evaluate the condition for this ViewHelper, allows for flexiblity in overriding this method.
+	 * @return bool
+	 */
+	static protected function evaluateCondition($arguments = NULL) {
+		$pageUid = $arguments['pageUid'];
+		$includeHidden = $arguments['includeHidden'];
+		$showHiddenInMenu = $arguments['showHiddenInMenu'];
+
 		if (NULL === $pageUid || TRUE === empty($pageUid) || 0 === intval($pageUid)) {
 			$pageUid = $GLOBALS['TSFE']->id;
 		}
-		$menu = $this->pageSelect->getMenu($pageUid, array(), '', $showHiddenInMenu);
-		$pageHasSubPages = (0 < count($menu));
-		if (TRUE === $pageHasSubPages) {
-			return $this->renderThenChild();
-		} else {
-			return $this->renderElseChild();
+
+		if (self::$pageSelect === NULL) {
+			$objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
+			self::$pageSelect = $objectManager->get('FluidTYPO3\Vhs\Service\PageSelectService');
 		}
+
+		$menu = self::$pageSelect->getMenu($pageUid, array(), '', $showHiddenInMenu);
+		$pageHasSubPages = (0 < count($menu));
+		return TRUE === $pageHasSubPages;
 	}
 
 }

@@ -1,31 +1,15 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Page;
 
-/***************************************************************
- *  Copyright notice
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Claus Due <claus@namelesscoder.net>
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
+
 use FluidTYPO3\Vhs\Service\PageSelectService;
-use FluidTYPO3\Vhs\Utility\ViewHelperUtility;
+use FluidTYPO3\Vhs\Traits\TemplateVariableViewHelperTrait;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper;
 
@@ -48,6 +32,8 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractTagBasedViewHelper;
  * @subpackage ViewHelpers\Page
  */
 class LinkViewHelper extends AbstractTagBasedViewHelper {
+
+	use TemplateVariableViewHelperTrait;
 
 	/**
 	 * @var PageSelectService
@@ -100,7 +86,7 @@ class LinkViewHelper extends AbstractTagBasedViewHelper {
 	public function render() {
 		// Check if link wizard link
 		$pageUid = $this->arguments['pageUid'];
-		$additionalParameters = $this->arguments['additionalParams'];
+		$additionalParameters = (array) $this->arguments['additionalParams'];
 		if (FALSE === is_numeric($pageUid)) {
 			$linkConfig = GeneralUtility::unQuoteFilenames($pageUid, TRUE);
 			if (TRUE === isset($linkConfig[0])) {
@@ -144,11 +130,13 @@ class LinkViewHelper extends AbstractTagBasedViewHelper {
 		}
 
 		// Get the title from the page or page overlay
+		$title = $this->getTitleValue($page);
 		if (0 < $currentLanguageUid) {
 			$pageOverlay = $this->pageSelect->getPageOverlay($pageUid, $currentLanguageUid);
-			$title = $this->getTitleValue($pageOverlay);
-		} else {
-			$title = $this->getTitleValue($page);
+			$translatedTitle = $this->getTitleValue($pageOverlay);
+			if (FALSE === empty($translatedTitle)) {
+				$title = $translatedTitle;
+			}
 		}
 
 		// Check if we should assign page title to the template variable container
@@ -160,7 +148,7 @@ class LinkViewHelper extends AbstractTagBasedViewHelper {
 		}
 
 		// Render childs to see if an alternative title content should be used
-		$renderedTitle = ViewHelperUtility::renderChildrenWithVariables($this, $this->templateVariableContainer, $variables);
+		$renderedTitle = $this->renderChildrenWithVariables($variables);
 		if (FALSE === empty($renderedTitle)) {
 			$title = $renderedTitle;
 		}
@@ -176,7 +164,7 @@ class LinkViewHelper extends AbstractTagBasedViewHelper {
 			->setArguments($additionalParameters)
 			->setCreateAbsoluteUri($this->arguments['absolute'])
 			->setAddQueryString($this->arguments['addQueryString'])
-			->setArgumentsToBeExcludedFromQueryString($this->arguments['argumentsToBeExcludedFromQueryString'])
+			->setArgumentsToBeExcludedFromQueryString((array) $this->arguments['argumentsToBeExcludedFromQueryString'])
 			->build();
 		$this->tag->addAttribute('href', $uri);
 		$this->tag->setContent($title);

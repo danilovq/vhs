@@ -1,29 +1,18 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Resource;
 
-/***************************************************************
- *  Copyright notice
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Danilo Bürger <danilo.buerger@hmspl.de>, Heimspiel GmbH
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
+
+use FluidTYPO3\Vhs\Utility\ResourceUtility;
+use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
+use TYPO3\CMS\Core\Utility\GeneralUtility;
+use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
+use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
 
 /**
  * Base class for image related view helpers adapted from FLUID
@@ -33,11 +22,6 @@ namespace FluidTYPO3\Vhs\ViewHelpers\Resource;
  * @package Vhs
  * @subpackage ViewHelpers\Resource
  */
-use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
-use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
-use TYPO3\CMS\Core\Utility\GeneralUtility;
-use FluidTYPO3\Vhs\Utility\ResourceUtility;
-
 abstract class AbstractImageViewHelper extends AbstractResourceViewHelper {
 
 	/**
@@ -89,7 +73,7 @@ abstract class AbstractImageViewHelper extends AbstractResourceViewHelper {
 	/**
 	 * @param array $files
 	 * @param boolean $onlyProperties
-	 * @throws \TYPO3\CMS\Fluid\Core\ViewHelper\Exception
+	 * @throws Exception
 	 * @return array|NULL
 	 */
 	public function preprocessImages($files, $onlyProperties = FALSE) {
@@ -121,9 +105,19 @@ abstract class AbstractImageViewHelper extends AbstractResourceViewHelper {
 				throw new Exception('Could not get image resource for "' . htmlspecialchars($file->getCombinedIdentifier()) . '".', 1253191060);
 			}
 
+			if ((float) substr(TYPO3_version, 0, 3) < 7.1) {
+				$imageInfo[3] = GeneralUtility::png_to_gif_by_imagemagick($imageInfo[3]);
+			} else {
+				$imageInfo[3] = GraphicalFunctions::pngToGifByImagemagick($imageInfo[3]);
+			}
 			$imageInfo[3] = GeneralUtility::png_to_gif_by_imagemagick($imageInfo[3]);
 			$GLOBALS['TSFE']->imagesOnPage[] = $imageInfo[3];
-			$imageSource = $GLOBALS['TSFE']->absRefPrefix . GeneralUtility::rawUrlEncodeFP($imageInfo[3]);
+
+			if (TRUE === GeneralUtility::isValidUrl($imageInfo[3])) {
+				$imageSource = $imageInfo[3];
+			} else {
+				$imageSource = $GLOBALS['TSFE']->absRefPrefix . GeneralUtility::rawUrlEncodeFP($imageInfo[3]);
+			}
 
 			if (TRUE === $onlyProperties) {
 				$file = ResourceUtility::getFileArray($file);
@@ -155,7 +149,7 @@ abstract class AbstractImageViewHelper extends AbstractResourceViewHelper {
 		chdir(constant('PATH_site'));
 		$typoScriptSetup = $this->configurationManager->getConfiguration(ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
 		$GLOBALS['TSFE'] = new \stdClass();
-		$template = GeneralUtility::makeInstance('TYPO3\CMS\Core\TypoScript\TemplateService');
+		$template = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\TemplateService');
 		$template->tt_track = 0;
 		$template->init();
 		$template->getFileName_backPath = constant('PATH_site');

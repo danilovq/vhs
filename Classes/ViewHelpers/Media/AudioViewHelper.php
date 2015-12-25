@@ -1,28 +1,14 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Media;
-/***************************************************************
- *  Copyright notice
+
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014  Xaver Maierhofer <xaver.maierhofer@xwissen.info>
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
+
+use FluidTYPO3\Vhs\Traits\TagViewHelperTrait;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
 
@@ -41,7 +27,9 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\Exception;
  * @package Vhs
  * @subpackage ViewHelpers\Media
  */
-class AudioViewHelper extends AbstractMediaTagViewHelper {
+class AudioViewHelper extends AbstractMediaViewHelper {
+
+	use TagViewHelperTrait;
 
 	/**
 	 * @var string
@@ -117,7 +105,8 @@ class AudioViewHelper extends AbstractMediaTagViewHelper {
 				// skip invalid source
 				continue;
 			}
-			if (FALSE === in_array(strtolower($type), $this->validTypes)) {
+			$type = strtolower($type);
+			if (FALSE === in_array($type, $this->validTypes)) {
 					throw new Exception('Invalid audio type "' . $type . '".', 1359381260);
 			}
 			$type = $this->mimeTypesMap[$type];
@@ -141,7 +130,7 @@ class AudioViewHelper extends AbstractMediaTagViewHelper {
 		if (TRUE === (boolean) $this->arguments['muted']) {
 			$tagAttributes['muted'] = 'muted';
 		}
-		if (TRUE === in_array($this->validPreloadModes, $this->arguments['preload'])) {
+		if (TRUE === in_array($this->arguments['preload'], $this->validPreloadModes)) {
 			$tagAttributes['preload'] = 'preload';
 		}
 		if (NULL !== $this->arguments['poster']) {

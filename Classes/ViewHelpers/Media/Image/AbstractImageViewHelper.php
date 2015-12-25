@@ -1,29 +1,15 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Media\Image;
-/***************************************************************
- *  Copyright notice
+
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Björn Fromme <fromme@dreipunktnull.com>, dreipunktnull
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
+
 use FluidTYPO3\Vhs\ViewHelpers\Media\AbstractMediaViewHelper;
+use TYPO3\CMS\Core\Imaging\GraphicalFunctions;
 use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Core\Utility\MathUtility;
 use TYPO3\CMS\Extbase\Configuration\ConfigurationManagerInterface;
@@ -95,7 +81,6 @@ abstract class AbstractImageViewHelper extends AbstractMediaViewHelper {
 
 	/**
 	 * @throws Exception
-	 * @return void
 	 */
 	public function preprocessImage() {
 		$src = $this->arguments['src'];
@@ -136,9 +121,14 @@ abstract class AbstractImageViewHelper extends AbstractMediaViewHelper {
 		if (FALSE === is_array($this->imageInfo)) {
 			throw new Exception('Could not get image resource for "' . htmlspecialchars($src) . '".', 1253191060);
 		}
-		$this->imageInfo[3] = GeneralUtility::png_to_gif_by_imagemagick($this->imageInfo[3]);
+		if ((float) substr(TYPO3_version, 0, 3) < 7.1) {
+			$this->imageInfo[3] = GeneralUtility::png_to_gif_by_imagemagick($this->imageInfo[3]);
+		} else {
+			$this->imageInfo[3] = GraphicalFunctions::pngToGifByImagemagick($this->imageInfo[3]);
+		}
 		$GLOBALS['TSFE']->imagesOnPage[] = $this->imageInfo[3];
-		$this->mediaSource = $GLOBALS['TSFE']->absRefPrefix . GeneralUtility::rawUrlEncodeFP($this->imageInfo[3]);
+		$publicUrl = rawurldecode($this->imageInfo[3]);
+		$this->mediaSource = GeneralUtility::rawUrlEncodeFP($publicUrl);
 		if ('BE' === TYPO3_MODE) {
 			$this->resetFrontendEnvironment();
 		}
@@ -158,7 +148,7 @@ abstract class AbstractImageViewHelper extends AbstractMediaViewHelper {
 		chdir(constant('PATH_site'));
 		$typoScriptSetup = $this->configurationManager->getConfiguration(ConfigurationManagerInterface::CONFIGURATION_TYPE_FULL_TYPOSCRIPT);
 		$GLOBALS['TSFE'] = new \stdClass();
-		$template = GeneralUtility::makeInstance('TYPO3\CMS\Core\TypoScript\TemplateService');
+		$template = GeneralUtility::makeInstance('TYPO3\\CMS\\Core\\TypoScript\\TemplateService');
 		$template->tt_track = 0;
 		$template->init();
 		$template->getFileName_backPath = constant('PATH_site');

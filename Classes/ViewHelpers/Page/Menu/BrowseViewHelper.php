@@ -1,29 +1,12 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Page\Menu;
 
-/***************************************************************
- *  Copyright notice
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Claus Due <claus@namelesscoder.net>
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
 
 /**
  * ### Page: Browse Menu ViewHelper
@@ -87,7 +70,7 @@ class BrowseViewHelper extends AbstractMenuViewHelper {
 		$nextUid = NULL;
 		$prevUid = NULL;
 		for ($i = 0; $i < $uidCount; $i++) {
-			if ((integer)$pageUids[$i] === $currentUid) {
+			if ((integer) $pageUids[$i] === $currentUid) {
 				if ($i > 0) {
 					$prevUid = $pageUids[$i - 1];
 				}
@@ -98,42 +81,42 @@ class BrowseViewHelper extends AbstractMenuViewHelper {
 			}
 		}
 		$pages = array();
-		if (TRUE === (boolean)$this->arguments['renderFirst']) {
+		if (TRUE === (boolean) $this->arguments['renderFirst']) {
 			$pages['first'] = $menuData[$firstUid];
 		}
 		if (NULL !== $prevUid) {
 			$pages['prev'] = $menuData[$prevUid];
 		}
-		if (TRUE === (boolean)$this->arguments['renderUp']) {
+		if (TRUE === (boolean) $this->arguments['renderUp']) {
 			$pages['up'] = $parentPage;
 		}
 		if (NULL !== $nextUid) {
 			$pages['next'] = $menuData[$nextUid];
 		}
-		if (TRUE === (boolean)$this->arguments['renderLast']) {
+		if (TRUE === (boolean) $this->arguments['renderLast']) {
 			$pages['last'] = $menuData[$lastUid];
 		}
 		$menuItems = $this->parseMenu($pages, $rootLineData);
 		$menu = array();
 		if (TRUE === isset($pages['first'])) {
 			$menu['first'] = $menuItems['first'];
-			$menu['first']['linktext'] = $this->getCustomLabelOrPageTitle('labelFirst', $menuItems[$firstUid]);
+			$menu['first']['linktext'] = $this->getCustomLabelOrPageTitle('labelFirst', $menuItems['first']);
 		}
 		if (TRUE === isset($pages['prev'])) {
 			$menu['prev'] = $menuItems['prev'];
-			$menu['prev']['linktext'] = $this->getCustomLabelOrPageTitle('labelPrevious', $menuItems[$prevUid]);
+			$menu['prev']['linktext'] = $this->getCustomLabelOrPageTitle('labelPrevious', $menuItems['prev']);
 		}
 		if (TRUE === isset($pages['up'])) {
 			$menu['up'] = $menuItems['up'];
-			$menu['up']['linktext'] = $this->getCustomLabelOrPageTitle('labelUp', $menuItems[$parentUid]);
+			$menu['up']['linktext'] = $this->getCustomLabelOrPageTitle('labelUp', $menuItems['up']);
 		}
 		if (TRUE === isset($pages['next'])) {
 			$menu['next'] = $menuItems['next'];
-			$menu['next']['linktext'] = $this->getCustomLabelOrPageTitle('labelNext', $menuItems[$nextUid]);
+			$menu['next']['linktext'] = $this->getCustomLabelOrPageTitle('labelNext', $menuItems['next']);
 		}
 		if (TRUE === isset($pages['last'])) {
 			$menu['last'] = $menuItems['last'];
-			$menu['last']['linktext'] = $this->getCustomLabelOrPageTitle('labelLast', $menuItems[$lastUid]);
+			$menu['last']['linktext'] = $this->getCustomLabelOrPageTitle('labelLast', $menuItems['last']);
 		}
 		$this->backupVariables();
 		$this->templateVariableContainer->add($this->arguments['as'], $menu);

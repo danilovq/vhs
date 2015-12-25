@@ -1,32 +1,20 @@
 <?php
 namespace FluidTYPO3\Vhs\ViewHelpers\Condition\Form;
 
-/***************************************************************
- *  Copyright notice
+/*
+ * This file is part of the FluidTYPO3/Vhs project under GPLv2 or later.
  *
- *  (c) 2014 Claus Due <claus@namelesscoder.net>
- *
- *  All rights reserved
- *
- *  This script is part of the TYPO3 project. The TYPO3 project is
- *  free software; you can redistribute it and/or modify
- *  it under the terms of the GNU General Public License as published by
- *  the Free Software Foundation; either version 2 of the License, or
- *  (at your option) any later version.
- *
- *  The GNU General Public License can be found at
- *  http://www.gnu.org/copyleft/gpl.html.
- *
- *  This script is distributed in the hope that it will be useful,
- *  but WITHOUT ANY WARRANTY; without even the implied warranty of
- *  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *  GNU General Public License for more details.
- *
- *  This copyright notice MUST APPEAR in all copies of the script!
- * ************************************************************* */
+ * For the full copyright and license information, please read the
+ * LICENSE.md file that was distributed with this source code.
+ */
+
+use TYPO3\CMS\Core\Utility\GeneralUtility;
 use TYPO3\CMS\Extbase\DomainObject\DomainObjectInterface;
 use TYPO3\CMS\Extbase\Reflection\ReflectionService;
+use TYPO3\CMS\Fluid\Core\Rendering\RenderingContextInterface;
 use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractConditionViewHelper;
+use TYPO3\CMS\Fluid\Core\ViewHelper\ViewHelperVariableContainer;
+use FluidTYPO3\Vhs\Traits\ConditionViewHelperTrait;
 
 /**
  * ### Form: Field Has Validator?
@@ -41,27 +29,17 @@ use TYPO3\CMS\Fluid\Core\ViewHelper\AbstractConditionViewHelper;
  */
 class HasValidatorViewHelper extends AbstractConditionViewHelper {
 
+	use ConditionViewHelperTrait;
+
 	/**
 	 * @var string
 	 */
 	const ALTERNATE_FORM_VIEWHELPER_CLASSNAME = 'TYPO3\\CMS\\Fluid\\ViewHelpers\\FormViewHelper';
 
 	/**
-	 * Note: property name is "ownReflectionService" because "reflectionService"
-	 * is used by the parent class - but is, quite unfriendly and needlessly, set
-	 * with "private" access.
-	 *
 	 * @var ReflectionService
 	 */
-	protected $ownReflectionService;
-
-	/**
-	 * @param ReflectionService $reflectionService
-	 * @return void
-	 */
-	public function injectOwnReflectionService(ReflectionService $reflectionService) {
-		$this->ownReflectionService = $reflectionService;
-	}
+	static protected $staticReflectionService;
 
 	/**
 	 * Render
@@ -76,17 +54,43 @@ class HasValidatorViewHelper extends AbstractConditionViewHelper {
 	 * @return string
 	 */
 	public function render($property, $validatorName = NULL, DomainObjectInterface $object = NULL) {
-		if (NULL === $object) {
-			$object = $this->getFormObject();
-			$className = get_class($object);
+		return static::renderStatic(
+			$this->arguments,
+			$this->buildRenderChildrenClosure(),
+			$this->renderingContext
+		);
+	}
+
+	/**
+	 * Default implementation for use in compiled templates
+	 *
+	 * @param array $arguments
+	 * @param \Closure $renderChildrenClosure
+	 * @param RenderingContextInterface $renderingContext
+	 * @return mixed
+	 */
+	static public function renderStatic(array $arguments, \Closure $renderChildrenClosure, RenderingContextInterface $renderingContext) {
+
+		if (self::$staticReflectionService === NULL) {
+			$objectManager = GeneralUtility::makeInstance('TYPO3\CMS\Extbase\Object\ObjectManager');
+			self::$staticReflectionService = $objectManager->get('TYPO3\CMS\Extbase\Reflection\ReflectionService');
 		}
+
+		$property = $arguments['property'];
+		$validatorName = isset($arguments['validatorName']) ? $arguments['validatorName'] : NULL;
+		$object = isset($arguments['object']) ? $arguments['object'] : NULL;
+
+		if (NULL === $object) {
+			$object = self::getFormObject($renderingContext->getViewHelperVariableContainer());
+		}
+		$className = get_class($object);
 		if (FALSE !== strpos($property, '.')) {
 			$pathSegments = explode('.', $property);
 			foreach ($pathSegments as $property) {
 				if (TRUE === ctype_digit($property)) {
 					continue;
 				}
-				$annotations = $this->ownReflectionService->getPropertyTagValues($className, $property, 'var');
+				$annotations = self::$staticReflectionService->getPropertyTagValues($className, $property, 'var');
 				$possibleClassName = array_pop($annotations);
 				if (FALSE !== strpos($possibleClassName, '<')) {
 					$className = array_pop(explode('<', trim($possibleClassName, '>')));
@@ -95,25 +99,27 @@ class HasValidatorViewHelper extends AbstractConditionViewHelper {
 				}
 			}
 		}
-		$annotations = $this->ownReflectionService->getPropertyTagValues($className, $property, 'validate');
+
+		$annotations = self::$staticReflectionService->getPropertyTagValues($className, $property, 'validate');
+		$hasEvaluated = TRUE;
 		if (0 < count($annotations) && (NULL === $validatorName || TRUE === in_array($validatorName, $annotations))) {
-			return $this->renderThenChild();
+			return static::renderStaticThenChild($arguments, $hasEvaluated);
 		}
-		return $this->renderElseChild();
+		return static::renderStaticElseChild($arguments, $hasEvaluated);
 	}
 
 	/**
+	 * @param ViewHelperVariableContainer $viewHelperVariableContainer
 	 * @param string $formClassName
 	 * @return DomainObjectInterface|NULL
 	 */
-	protected function getFormObject($formClassName = 'Tx_Fluid_ViewHelpers_FormViewHelper') {
-		if (TRUE === $this->viewHelperVariableContainer->exists($formClassName, 'formObject')) {
-			return $this->viewHelperVariableContainer->get($formClassName, 'formObject');
+	static protected function getFormObject($viewHelperVariableContainer, $formClassName = 'Tx_Fluid_ViewHelpers_FormViewHelper') {
+		if (TRUE === $viewHelperVariableContainer->exists($formClassName, 'formObject')) {
+			return $viewHelperVariableContainer->get($formClassName, 'formObject');
 		}
 		if (self::ALTERNATE_FORM_VIEWHELPER_CLASSNAME !== $formClassName) {
-			return $this->getFormObject(self::ALTERNATE_FORM_VIEWHELPER_CLASSNAME);
+			return self::getFormObject($viewHelperVariableContainer, self::ALTERNATE_FORM_VIEWHELPER_CLASSNAME);
 		}
 		return NULL;
 	}
-
 }
